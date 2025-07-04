@@ -1,0 +1,21 @@
+SystemName=AI工具集
+PORT=80
+ContainerName=ai
+OriginAllowList=https://www.justdrink.com.tw/aiui/
+AllowMethods=POST;GET;PUT;DELETE
+ResponseType=code
+
+DocumentRoot=www/html
+TemplateRoot=www/template/
+UploadFolder=tmp/
+ExtraPath=aiui/
+JobsFile=joblists
+
+MCPSrv=https://www.justdrink.com.tw   # MCP Server URL
+MCPSrvPath=/mcpsrv/ # MCP Server Path
+MCPToken=
+
+OllamaUrl=http://10.109.1.10:11434
+Stream=false
+
+GEMINI_API_KEY=

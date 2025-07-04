@@ -1,0 +1,11 @@
+*.exe
+*.old
+*old
+envfile
+new*.html
+sty*.html
+test*.html
+sse*.html
+homepage*.html
+*.log
+asai.md

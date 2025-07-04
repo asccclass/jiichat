@@ -1,0 +1,86 @@
+/* style.css */
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1, h2, h3 {
+    color: #2c3e50;
+}
+
+.output-area {
+    border: 1px solid #ccc;
+    padding: 10px;
+    height: 300px;
+    overflow-y: scroll;
+    background-color: #fff;
+    margin-bottom: 15px;
+}
+
+.output-area div {
+    padding: 5px 0;
+    border-bottom: 1px dotted #eee;
+    word-wrap: break-word; /* Ensure long strings wrap */
+}
+.output-area div:last-child {
+    border-bottom: none;
+}
+
+textarea {
+    width: calc(100% - 22px); /* Full width minus padding/border */
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+#connection-status {
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding: 5px;
+    background-color: #e0e0e0;
+    border-radius: 3px;
+}
+
+#quick-actions button {
+    background-color: #2ecc71;
+}
+#quick-actions button:hover {
+    background-color: #27ae60;
+}
+
+.client-message {
+    color: #007bff; /* Blue for client messages */
+    font-style: italic;
+}
+
+.server-message {
+    color: #28a745; /* Green for server messages */
+}
+.server-message.debug { /* If server sends something unexpected */
+    color: #dc3545; /* Red for errors/debug */
+}
+
+hr {
+    margin: 20px 0;
+    border: 0;
+    border-top: 1px solid #ccc;
+}

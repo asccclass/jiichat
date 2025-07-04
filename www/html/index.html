@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Jii Chat-雞寮</title>
+   <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+   <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+   <link rel="manifest" href="images/site.webmanifest">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.min.js"></script>
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">    
+   <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+   <script src="https://unpkg.com/htmx-ext-sse@2.2.3" integrity="sha384-Y4gc0CK6Kg+hmulDc6rZPJu0tqvk7EWlih0Oh+2OkAi1ZDlCbBDCQEE2uVk472Ky" crossorigin="anonymous"></script>
+   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+   <style>
+       :root {
+           --primary-color: #4facfe;
+           --secondary-color: #00f2fe;
+           --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+           --bg-primary: #ffffff;
+           --bg-secondary: #f8fafc;
+           --bg-card: #ffffff;
+           --text-primary: #1a202c;
+           --text-secondary: #4a5568;
+           --text-muted: #718096;
+           --border-color: #e2e8f0;
+           --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+           --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+           --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+           --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+           --radius-sm: 0.375rem;
+           --radius-md: 0.5rem;
+           --radius-lg: 0.75rem;
+           --radius-xl: 1rem;
+       }
+
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+
+       body {
+           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           background: var(--bg-secondary);
+           color: var(--text-primary);
+           line-height: 1.6;
+       }
+
+       .main-container {
+           display: flex;
+           height: 100vh;
+           overflow: hidden;
+       }
+
+       /* 側邊欄樣式 */
+       
+.main-container.sidebar-open {
+   grid-template-columns: 280px 70% 30%;
+}
+
+.main-container:not(.sidebar-open) .sidebar {
+    transform: translateX(-100%);
+}
+.main-container.sidebar-open .sidebar {
+    transform: translateX(0);
+}
+       .sidebar {
+           width: 300px;
+           background: var(--bg-card);
+           border-right: 1px solid var(--border-color);
+           display: flex;
+           flex-direction: column;
+           z-index: 1000;
+           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+       }
+
+       .sidebar-header {
+           padding: 1.5rem;
+           border-bottom: 1px solid var(--border-color);
+           display: flex;
+           align-items: center;
+           gap: 1rem;
+       }
+
+       .sidebar-toggle {
+           background: none;
+           border: none;
+           font-size: 1.2rem;
+           color: var(--text-secondary);
+           cursor: pointer;
+           padding: 0.5rem;
+           border-radius: var(--radius-md);
+           transition: all 0.2s ease;
+       }
+
+       .sidebar-toggle:hover {
+           background: var(--bg-secondary);
+           color: var(--primary-color);
+       }
+
+       .sidebar-brand {
+           font-size: 1.25rem;
+           font-weight: 700;
+           background: var(--accent-gradient);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           background-clip: text;
+       }
+
+       .sidebar-icons {
+           display: flex;
+           padding: 1rem;
+           gap: 0.5rem;
+           border-bottom: 1px solid var(--border-color);
+       }
+
+       .sidebar-icon {
+           padding: 0.75rem;
+           background: var(--bg-secondary);
+           border-radius: var(--radius-md);
+           cursor: pointer;
+           transition: all 0.2s ease;
+           color: var(--text-secondary);
+       }
+
+       .sidebar-icon:hover {
+           background: var(--primary-color);
+           color: white;
+           transform: translateY(-2px);
+       }
+
+       .sidebar-content {
+           flex: 1;
+           padding: 1.5rem;
+           overflow-y: auto;
+       }
+
+       .model-select {
+           margin-bottom: 1.5rem;
+       }
+
+       .model-select select {
+           width: 100%;
+           padding: 0.75rem;
+           border: 1px solid var(--border-color);
+           border-radius: var(--radius-md);
+           background: var(--bg-card);
+           color: var(--text-primary);
+           font-size: 0.875rem;
+       }
+
+       .nav-menu {
+           list-style: none;
+       }
+
+       .nav-item {
+           margin-bottom: 0.5rem;
+       }
+
+       .nav-link {
+           display: flex;
+           align-items: center;
+           gap: 0.75rem;
+           padding: 0.75rem 1rem;
+           text-decoration: none;
+           color: var(--text-secondary);
+           border-radius: var(--radius-md);
+           transition: all 0.2s ease;
+       }
+
+       .nav-link:hover,
+       .nav-link.active {
+           background: var(--primary-color);
+           color: white;
+       }
+
+       /* 主要內容區域 */
+       .main-content {
+           flex: 1;
+           display: flex;
+           flex-direction: column;
+           min-width: 0;
+       }
+
+       .chat-header {
+           padding: 1.5rem;
+           border-bottom: 1px solid var(--border-color);
+           background: var(--bg-card);
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           flex-wrap: wrap;
+           gap: 1rem;
+       }
+
+       .chat-header-left {
+           display: flex;
+           align-items: center;
+           gap: 1rem;
+       }
+
+       .chat-avatar {
+           width: 3rem;
+           height: 3rem;
+           background: var(--accent-gradient);
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: white;
+           font-size: 1.25rem;
+       }
+
+       .chat-info h3 {
+           font-size: 1.125rem;
+           font-weight: 600;
+           margin-bottom: 0.25rem;
+       }
+
+       .chat-status {
+           font-size: 0.875rem;
+           color: var(--text-secondary);
+       }
+
+       .chat-header-right {
+           display: flex;
+           align-items: center;
+           gap: 1.5rem;
+           flex-wrap: wrap;
+       }
+
+       .function-toolbar {
+           display: flex;
+           gap: 0.5rem;
+       }
+
+       .function-btn {
+           padding: 0.5rem;
+           background: var(--bg-secondary);
+           border: none;
+           border-radius: var(--radius-md);
+           cursor: pointer;
+           transition: all 0.2s ease;
+           color: var(--text-secondary);
+       }
+
+       .function-btn:hover {
+           background: var(--primary-color);
+           color: white;
+           transform: translateY(-2px);
+       }
+
+       .user-info {
+           display: flex;
+           align-items: center;
+           gap: 0.75rem;
+       }
+
+       .user-avatar {
+           width: 2.5rem;
+           height: 2.5rem;
+           background: var(--secondary-gradient);
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: white;
+           font-weight: 600;
+       }
+
+       .user-name {
+           font-weight: 500;
+       }
+
+       .user-status {
+           font-size: 0.75rem;
+           color: var(--text-secondary);
+       }
+
+       .chat-messages {
+           flex: 1;
+           padding: 1.5rem;
+           overflow-y: auto;
+           background: var(--bg-secondary);
+       }
+
+       .message {
+           display: flex;
+           gap: 1rem;
+           margin-bottom: 1.5rem;
+           align-items: flex-start;
+       }
+
+       .message.user {
+           flex-direction: row-reverse;
+       }
+
+       .message-avatar {
+           width: 2.5rem;
+           height: 2.5rem;
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: white;
+           flex-shrink: 0;
+       }
+
+       .message .message-avatar {
+           background: var(--accent-gradient);
+       }
+
+       .message.user .message-avatar {
+           background: var(--secondary-gradient);
+       }
+
+       .message-bubble {
+           max-width: 70%;
+           padding: 1rem 1.25rem;
+           border-radius: 1.25rem;
+           background: var(--bg-card);
+           box-shadow: var(--shadow-sm);
+           border: 1px solid var(--border-color);
+       }
+
+       .message-bubble li {
+           margin-left: 2em;
+       }
+
+       .message.user .message-bubble {
+           background: var(--primary-color);
+           color: white;
+           border: none;
+       }
+
+       .chat-input {
+           padding: 1.5rem;
+           background: var(--bg-card);
+           border-top: 1px solid var(--border-color);
+       }
+
+       .input-container {
+           display: flex;
+           gap: 0.75rem;
+           align-items: flex-end;
+       }
+
+       .chat-input-field {
+           flex: 1;
+           padding: 0.75rem 1rem;
+           border: 1px solid var(--border-color);
+           border-radius: var(--radius-lg);
+           background: var(--bg-secondary);
+           resize: vertical;
+           min-height: 2.75rem;
+           max-height: 8rem;
+           font-family: inherit;
+       }
+
+       .send-button {
+           padding: 0.75rem 1rem;
+           background: var(--primary-color);
+           color: white;
+           border: none;
+           border-radius: var(--radius-lg);
+           cursor: pointer;
+           transition: all 0.2s ease;
+       }
+
+       .send-button:hover {
+           background: #3b82f6;
+           transform: translateY(-2px);
+       }
+
+       /* 資訊面板 - 優化的 Bento Grid */
+       .info-panel {
+           width: 400px;
+           background: var(--bg-card);
+           border-left: 1px solid var(--border-color);
+           padding: 2rem;
+           overflow-y: auto;
+           flex-shrink: 0;
+       }
+
+       .hero-section {
+           text-align: center;
+           margin-bottom: 2.5rem;
+       }
+
+       .hero-title {
+           font-size: 2rem;
+           font-weight: 800;
+           background: var(--accent-gradient);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           background-clip: text;
+           margin-bottom: 0.75rem;
+       }
+
+       .hero-subtitle {
+           color: var(--text-secondary);
+           font-size: 0.95rem;
+           line-height: 1.6;
+       }
+
+       /* 響應式 Bento Grid */
+       .bento-grid {
+           display: grid;
+           grid-template-columns: repeat(2, 1fr);
+           gap: 1rem;
+           grid-auto-rows: minmax(120px, auto);
+       }
+
+       .bento-card {
+           background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+           backdrop-filter: blur(10px);
+           border: 1px solid rgba(255,255,255,0.1);
+           border-radius: var(--radius-xl);
+           padding: 1.5rem;
+           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+           position: relative;
+           overflow: hidden;
+           display: flex;
+           flex-direction: column;
+           justify-content: space-between;
+       }
+
+       .bento-card::before {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: var(--accent-gradient);
+           opacity: 0;
+           transition: opacity 0.3s ease;
+           z-index: -1;
+       }
+
+       .bento-card:hover {
+           transform: translateY(-8px);
+           box-shadow: var(--shadow-xl);
+           border-color: rgba(79, 172, 254, 0.3);
+       }
+
+       .bento-card:hover::before {
+           opacity: 0.05;
+       }
+
+       /* 卡片大小變化 */
+       .bento-card.card-large {
+           grid-column: span 2;
+           grid-row: span 1;
+           min-height: 140px;
+       }
+
+       .bento-card.card-wide {
+           grid-column: span 2;
+           min-height: 120px;
+       }
+
+       .bento-card.card-tall {
+           grid-row: span 2;
+           min-height: 250px;
+       }
+
+       .card-title {
+           font-size: 0.9rem;
+           font-weight: 600;
+           color: var(--text-primary);
+           margin-bottom: 0.5rem;
+       }
+
+       .card-number {
+           font-size: 1.75rem;
+           font-weight: 800;
+           background: var(--accent-gradient);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           background-clip: text;
+           margin-bottom: 0.5rem;
+       }
+
+       .card-description {
+           font-size: 0.8rem;
+           color: var(--text-secondary);
+           line-height: 1.5;
+       }
+
+       /* 響應式設計 */
+       @media (max-width: 1400px) {
+           .info-panel {
+               width: 350px;
+           }
+           
+           .bento-grid {
+               grid-template-columns: 1fr;
+               gap: 0.875rem;
+           }
+           
+           .bento-card.card-large,
+           .bento-card.card-wide {
+               grid-column: span 1;
+           }
+           
+           .bento-card.card-tall {
+               grid-row: span 1;
+               min-height: 160px;
+           }
+       }
+
+       @media (max-width: 1200px) {
+           .main-container {
+               flex-direction: column;
+           }
+           
+           .sidebar {
+               width: 100%;
+               height: auto;
+               order: 2;
+           }
+           
+           .main-content {
+               order: 1;
+               height: 60vh;
+           }
+           
+           .info-panel {
+               width: 100%;
+               height: auto;
+               order: 3;
+               max-height: 40vh;
+           }
+           
+           .bento-grid {
+               grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+               gap: 1rem;
+           }
+           
+           .hero-section {
+               margin-bottom: 1.5rem;
+           }
+           
+           .hero-title {
+               font-size: 1.75rem;
+           }
+       }
+
+       @media (max-width: 768px) {
+           .sidebar {
+               display: none;
+           }
+           
+           .info-panel {
+               padding: 1.5rem;
+           }
+           
+           .bento-grid {
+               grid-template-columns: 1fr;
+               gap: 0.75rem;
+           }
+           
+           .bento-card {
+               padding: 1.25rem;
+               min-height: 100px;
+           }
+           
+           .chat-header {
+               padding: 1rem;
+               flex-direction: column;
+               align-items: flex-start;
+           }
+           
+           .function-toolbar {
+               order: 2;
+               width: 100%;
+               justify-content: space-between;
+           }
+           
+           .user-info {
+               order: 1;
+               align-self: flex-end;
+           }
+           
+           .chat-messages {
+               padding: 1rem;
+           }
+           
+           .message-bubble {
+               max-width: 85%;
+           }
+           
+           .hero-title {
+               font-size: 1.5rem;
+           }
+           
+           .hero-subtitle {
+               font-size: 0.875rem;
+           }
+       }
+
+       @media (max-width: 480px) {
+           .info-panel {
+               padding: 1rem;
+           }
+           
+           .bento-card {
+               padding: 1rem;
+           }
+           
+           .card-number {
+               font-size: 1.5rem;
+           }
+           
+           .card-title {
+               font-size: 0.85rem;
+           }
+           
+           .card-description {
+               font-size: 0.75rem;
+           }
+           
+           .chat-header {
+               padding: 0.75rem;
+           }
+           
+           .chat-input {
+               padding: 1rem;
+           }
+           
+           .function-btn {
+               padding: 0.375rem;
+               font-size: 0.875rem;
+           }
+       }
+
+       /* 側邊欄切換狀態 */
+       .main-container.sidebar-open .sidebar {
+           transform: translateX(0);
+       }
+
+       @media (max-width: 1200px) {
+           .main-container.sidebar-open .sidebar {
+               position: fixed;
+               top: 0;
+               left: 0;
+               height: 100vh;
+               z-index: 1000;
+               box-shadow: var(--shadow-lg);
+           }
+       }
+
+       /* 動畫效果 */
+       @keyframes pulse {
+           0% {
+               transform: scale(1);
+               opacity: 1;
+           }
+           50% {
+               transform: scale(1.2);
+               opacity: 0.7;
+           }
+           100% {
+               transform: scale(1);
+               opacity: 1;
+           }
+       }
+
+       .pulse {
+           animation: pulse 2s infinite;
+       }
+
+       /* 滾動條樣式 */
+       ::-webkit-scrollbar {
+           width: 6px;
+       }
+
+       ::-webkit-scrollbar-track {
+           background: var(--bg-secondary);
+       }
+
+       ::-webkit-scrollbar-thumb {
+           background: var(--border-color);
+           border-radius: 3px;
+       }
+
+       ::-webkit-scrollbar-thumb:hover {
+           background: var(--text-muted);
+       }
+   </style>
+</head>
+<body>
+   <div class="main-container" id="mainContainer">
+        <!-- 側邊欄 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <button class="sidebar-toggle" onclick="toggleSidebar()" title="隱藏/顯示側邊欄">
+                   <i class="fas fa-bars"></i>
+                </button>
+                <div class="sidebar-brand">Jii Chat 雞聊</div>
+            </div>           
+            <div class="sidebar-icons">
+                <div class="sidebar-icon" title="聊天">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="sidebar-icon" title="設定">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="sidebar-icon" title="歷史記錄">
+                    <i class="fas fa-history"></i>
+                </div>
+                <div class="sidebar-icon" title="幫助">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+            </div>
+            <div class="sidebar-content">
+               <div class="model-select">
+                  <select id="model-dropdown" hx-get="/models" hx-trigger="load" hx-swap="none">
+                  </select>
+               </div>
+                <h2>功能選單</h2>
+                <nav>
+                    <ul class="nav-menu"> 
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active" hx-post="/new-chat" hx-trigger="click" hx-target="#chat-container" hx-swap="innerHTML">
+                               <i class="fas fa-plus"></i>新對話                                
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" hx-get="/api/models" hx-target="#info-panel">
+                                <i class="fas fa-brain"></i>
+                                模型選擇
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" hx-get="/api/history" hx-target="#info-panel">
+                                <i class="fas fa-clock"></i>
+                                對話歷史
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" hx-get="/api/templates" hx-target="#info-panel">
+                                <i class="fas fa-file-alt"></i>
+                                對話模板
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" hx-get="/api/settings" hx-target="#info-panel">
+                                <i class="fas fa-sliders-h"></i>
+                                進階設定
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" hx-get="/api/analytics" hx-target="#info-panel">
+                                <i class="fas fa-chart-line"></i>
+                                使用統計
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- 主要內容區域 (聊天區域) -->
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <div class="chat-avatara">
+                       <img src="images/jclogo.png" border="0">
+                    </div>
+                    <div class="chat-info">
+                        <h3>AI 助手</h3>
+                        <div class="chat-status">在線 • 立即回應</div>
+                    </div>
+                </div>
+                
+                <div class="chat-header-right">
+                    <!-- 功能工具列 -->
+                    <div class="function-toolbar">
+                        <button class="function-btn" data-tooltip="待辦事項" onclick="toggleTodoList()">
+                            <img src="images/todolist.png" alt="列出所有待辦事項"><br>待辦事項
+                        </button>
+                        <button class="function-btn" data-tooltip="英翻中" onclick="setTranslationMode('en-to-zh')">
+                            <i class="fas fa-language"></i>
+                        </button>
+                        <button class="function-btn" data-tooltip="中翻英" onclick="setTranslationMode('zh-to-en')">
+                            <i class="fas fa-globe"></i>
+                        </button>
+                        <button class="function-btn" data-tooltip="中英文切換" onclick="toggleLanguage()">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                        <button class="function-btn" data-tooltip="更多功能" onclick="showMoreFunctions()">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+
+                    <!-- 登入者資訊 -->
+                    <div class="user-info">
+                        <div class="user-avatar">王</div>
+                        <div>
+                            <div class="user-name">王小明</div>
+                            <div class="user-status">線上</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-container" class="chat-messages">
+                <div class="message">
+                    <div class="message-avatar0">
+                        <img src="images/jiiChat04.png" border="0">
+                    </div>
+                    <div class="message-bubble ai-message">
+                        您好！我是AI助手，很高興為您服務。有什麼問題需要幫助嗎？
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+               <form hx-trigger="submit" hx-ext="sse-events" hx-target="#chat-container" hx-swap="beforeend">
+                <div class="input-container">
+                    <input type="hidden" name="model" id="model-input">
+                    <input type="file" id="file-input" style="display: none;">
+                    <textarea id="message-input" name="message-input" placeholder="輸入您的問題..." required class="chat-input-field" 
+                        onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.form.dispatchEvent(new Event('submit')); }"></textarea>
+                    <button class="send-button" id="send-button" type="submit"><i class="fas fa-paper-plane"></i></button>
+                </div>
+               </form>
+            </div>
+        </div>
+
+        <!-- 資訊面板 -->
+        <div class="info-panel" id="info-panel">
+
+            <div class="hero-section">
+                <span class="hero-title"><img src="images/jiichat_logo.png" border="0" title="Jii Chat 雞聊"></span>
+                <p class="hero-subtitle">一款清爽介面的人工智慧對話平台，品牌意象（Jii = 雞的叫聲）和聊天、社群功能，融合「雞聊」的在地感與可愛風格。</p>
+            </div>
+
+            <!-- 優化的響應式 Bento Grid 卡片布局 -->
+            <div class="bento-grid">
+                <div class="bento-card card-large">
+                    <div>
+                        <h3 class="card-title">對話統計</h3>
+                        <div class="card-number">2.4K</div>
+                        <p class="card-description">本月已處理對話數量，AI回應準確率達98.5%</p>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <div>
+                        <h3 class="card-title">活躍用戶</h3>
+                        <div class="card-number">856</div>
+                        <p class="card-description">日活躍用戶數</p>
+                    </div>
+                </div>
+
+                <div class="bento-card">
+                    <div>
+                        <h3 class="card-title">回應速度</h3>
+                        <div class="card-number">1.2s</div>
+                        <p class="card-description">平均回應時間</p>
+                     </div>
+                </div>
+
+                <div class="bento-card card-wide">
+                    <div>
+                        <h3 class="card-title">AI 模型</h3>
+                        <p class="card-description">採用最新GPT-4架構，支援多語言對話、程式碼生成、創意寫作等多種應用場景</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <span style="background: var(--accent-gradient); padding: 5px 12px; border-radius: 15px; font-size: 0.8em;">GPT-4</span>
+                        <span style="background: var(--secondary-gradient); padding: 5px 12px; border-radius: 15px; font-size: 0.8em;">多語言</span>
+                    </div>
+                </div>
+                
+                <div class="bento-card card-tall">
+                    <div>
+                        <h3 class="card-title">功能特色</h3>
+                        <ul style="list-style: none; padding: 0; margin-top: 15px; color: var(--text-secondary);">
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-check" style="color: #4facfe;"></i>
+                                智能對話
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-check" style="color: #4facfe;"></i>
+                                程式碼輔助
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-check" style="color: #4facfe;"></i>
+                                創意寫作
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-check" style="color: #4facfe;"></i>
+                                數據分析
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bento-card">
+                    <div>
+                        <h3 class="card-title">滿意度</h3>
+                        <div class="card-number">4.9</div>
+                    </div>
+                    <p class="card-description">用戶評分 (5分制)</p>
+                </div>
+
+                <div class="bento-card">
+                    <div>
+                        <h3 class="card-title">在線狀態</h3>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <div style="width: 12px; height: 12px; background: #4facfe; border-radius: 50%; animation: pulse 2s infinite;"></div>
+                            <span style="color: #4facfe; font-weight: 500;">運行中</span>
+                        </div>
+                    </div>
+                    <p class="card-description">AI系統正常運行</p>
+                </div>
+            </div>            
+        </div>
+    </div>
+
+    <script>
+ var messageInput;
+
+const parser = new DOMParser();
+
+// 取得模型的下拉選單
+document.addEventListener("htmx:afterRequest", function (event) {
+   if (event.detail.target.id === "model-dropdown") {
+      const jsonData = JSON.parse(event.detail.xhr.responseText);
+      console.log(jsonData[0]);
+      const modelList = document.getElementById("model-dropdown");
+      jsonData.forEach(model => {                    
+         modelList.innerHTML += model;
+      });
+   }
+});
+
+// SSE連接處理
+function setupSSEConnection(messageId) {  
+   const eventSource = new EventSource(`/${messageId}`);
+   const messageContent = document.querySelector(`#message-${messageId} .message-content`);
+   console.log("SSE連接已建立，ID:", messageId);
+            
+   eventSource.onmessage = function(event) {
+      const data = JSON.parse(event.data);                
+      if(data.content)  messageContent.innerHTML = data.content;
+      if(data.done) eventSource.close();
+   };
+           
+   eventSource.onerror = function() {
+      eventSource.close();
+   };
+}
+
+// 判斷是否有LaTeX數學公式
+function containsLaTeXA(str) {  // 簡單判斷常見格式  
+  return /\$[^$]+\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/.test(str);
+}
+
+function containsLaTeX(text) {
+    if(text.includes('$') || text.includes('$$') || text.includes('\\[') || text.includes('\\(')) {  // 檢查常見的數學模式分隔符號
+        return true;
+    }
+    // 檢查常見的 LaTeX 指令 (這裡只列舉一小部分，實際應用可能需要更全面的列表)
+    const latexCommands = [
+        '\\frac', '\\sqrt', '\\sum', '\\int', '\\alpha', '\\beta', '\\gamma',
+        '\\text', '\\begin', '\\end', '\\section', '\\subsection', '\\chapter'
+    ];
+    for(let i = 0; i < latexCommands.length; i++) {
+        if(text.includes(latexCommands[i])) {
+            return true;
+        }
+    }
+    // 檢查常見的逸出符號
+    const escapedChars = ['\\%', '\\&', '\\_', '\\#', '\\{', '\\}'];
+    for(let i = 0; i < escapedChars.length; i++) {
+        if(text.includes(escapedChars[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function renderMathJax(element) {
+  if(window.MathJax && window.MathJax.typesetPromise) {
+    MathJax.typesetPromise([element]);
+  }
+}
+
+
+// 側邊欄切換功能
+function toggleSidebar() {
+   const container = document.getElementById('mainContainer');
+   container.classList.toggle('sidebar-open');
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chat-container');
+    messageInput = document.getElementById('message-input');
+    const fileInput = document.getElementById('file-input');
+    const mainContent = document.getElementById('main-content');
+    var prefix = ""; 
+
+    // 設定模型
+    document.getElementById('model-input').value = document.getElementById('model-dropdown').value;  // 初始化隱藏字段值            
+    document.getElementById('model-dropdown').addEventListener('change', function() { // 改變選擇時，將選擇的模型值傳遞到隱藏輸入字段
+        document.getElementById('model-input').value = this.value;
+    });
+    
+    htmx.defineExtension('sse-events', {
+        onEvent: function(name, event) { // 處理SSE事件
+        }
+    });
+
+    // HTMX事件處理器
+    document.body.addEventListener('htmx:afterSwap', function(event) {      
+        const newElements = event.detail.target.querySelectorAll('[id^="message-"]');  // 如果新增了訊息元素並且有特定的ID
+        newElements.forEach(element => {
+            const messageId = element.id.replace('message-', '');
+            if(element.classList.contains('ai-message'))  setupSSEConnection(messageId);
+        });
+    });
+
+
+    // 添加使用者訊息
+    function addUserMessage(text) {
+        const message = text.trim();
+        const chatMessages = document.getElementById('chat-container');
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user';
+        const latexPattern = /\[([\s\S]+?)\]/g;        
+        if(latexPattern.test(text)) {
+            text = text.replace(latexPattern, function(match, p1) { return `\\[${p1}\\]`; });
+        }
+        userMessage.innerHTML = `
+            <div class="message-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="message-bubble">${message}</div>
+        `;
+        chatMessages.appendChild(userMessage);
+        if(containsLaTeX(text)) { renderMathJax(userMessage); } 
+        messageInput.value = '';  // 清空輸入框
+        chatContainer.scrollTop = chatContainer.scrollHeight;  // 滾動到底部
+    }
+
+    // 添加AI訊息
+    function addAIMessage(text) {
+        const chatMessages = document.getElementById('chat-container');
+        const aiMessage = document.createElement('div');
+        aiMessage.className = 'message';
+        const latexPattern = /\[([\s\S]+?)\]/g;        
+        if(latexPattern.test(text)) {
+            text = text.replace(latexPattern, function(match, p1) { return `\\[${p1}\\]`; });
+        }
+        aiMessage.innerHTML = `
+            <div class="message-avatara">
+                <img src="images/jiiChat04.png" border="0">
+            </div>
+            <div class="message-bubble">${text}</div>
+        `;
+        chatMessages.appendChild(aiMessage);
+        if(containsLaTeX(text)) { renderMathJax(aiMessage); } 
+        chatMessages.scrollTop = chatMessages.scrollHeight;  // 滾動到底部           
+        return chatMessages; // 返回訊息元素以便後續使用
+    }
+
+    
+    // 發送訊息功能
+    window.sendMessage = function(message) {
+        if(!message)  message = messageInput.value.trim();
+        if(!message)  return;  // 如果沒有輸入訊息則不處理
+        // 連接到SSE端點
+        const selectedModel = document.getElementById('model-dropdown').value;
+        const eventSource = new EventSource(`/sse?message=${encodeURIComponent(prefix + message)}&model=${encodeURIComponent(selectedModel)}`);
+        let currentAiMessage = null;
+        addUserMessage(message);  // 添加使用者訊息到聊天
+        
+        eventSource.onmessage = function(event) {    // 收到訊息
+            const data = JSON.parse(event.data);
+            if(data.type === 'complete') {  // 完成時關閉連接並隱藏指示器
+                eventSource.close();
+                // example.style.display = 'none';  // 隱藏範例區域
+                if(currentAiMessage) currentAiMessage.dataset.complete = 'true';
+                chatContainer.scrollIntoView({ behavior: 'smooth', block: 'end' }); // 滾動到最新消息  
+            } else if(data.type === 'chunk') {  // 第一個塊時創建新消息元素
+                if(!currentAiMessage) {
+                   // currentAiMessage = addAIMessage("");  
+                }
+                data.content = data.content.replace(/\\n/g, '\n');            
+                addAIMessage(marked.parse(data.content)); // 使用marked解析Markdown內容   
+                chatContainer.scrollTop = chatContainer.scrollHeight;  // 滾動到底部               
+            }
+        };
+
+        // 錯誤處理
+        eventSource.onerror = function(e) {
+            eventSource.close();
+            addAIMessage('連接出現問題，請稍後再試。'); // 顯示錯誤消息
+            console.error('SSE連接錯誤:', e);
+        };
+        messageInput.value = '';   // 清空輸入框
+    }
+
+    // 提交表單時處理用戶消息並連接SSE
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage(messageInput.value) ;
+    });
+});
+
+        // 功能按鈕的JavaScript函數
+        function toggleTodoList() { sendMessage('列出所有待辦事項'); }
+
+        function setTranslationMode(mode) {
+            const buttons = document.querySelectorAll('.function-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            if (mode === 'en-to-zh') {
+                console.log('設定為英翻中模式');
+                event.target.classList.add('active');
+                document.querySelector('.chat-input-field').placeholder = 'Enter English text to translate to Chinese...';
+            } else if (mode === 'zh-to-en') {
+                console.log('設定為中翻英模式');
+                event.target.classList.add('active');
+                document.querySelector('.chat-input-field').placeholder = '輸入中文文字翻譯成英文...';
+            }
+        }
+
+        function toggleLanguage() {
+            console.log('切換語言');
+            const currentLang = document.documentElement.lang;
+            if (currentLang === 'zh-TW') {
+                document.documentElement.lang = 'en';
+                // 可以在這裡實現語言切換邏輯
+                alert('語言切換功能開發中...');
+            } else {
+                document.documentElement.lang = 'zh-TW';
+            }
+        }
+
+        function showMoreFunctions() {
+            console.log('顯示更多功能');
+            // 這裡可以顯示更多功能選單
+            alert('更多功能即將推出...');
+        }
+
+        // 初始化動畫
+        document.addEventListener('DOMContentLoaded', function() {
+            // 側邊欄默認開啟
+            const container = document.getElementById('mainContainer');
+            container.classList.add('sidebar-open');
+            
+            // 添加卡片動畫
+            const cards = document.querySelectorAll('.bento-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // 脈衝動畫
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes pulse {
+                    0% {
+                        transform: scale(1);
+                        opacity: 1;
+                    }
+                    50% {
+                        transform: scale(1.2);
+                        opacity: 0.7;
+                    }
+                    100% {
+                        transform: scale(1);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+
+        // HTMX 事件監聽
+        document.body.addEventListener('htmx:afterRequest', function(event) {
+            if (event.detail.xhr.status === 200) {
+                console.log('HTMX request successful');
+            }
+        });
+
+        // 模擬聊天功能
+        document.addEventListener('htmx:configRequest', function(event) {
+            if (event.detail.path === '/api/chat/send') {
+                event.preventDefault();
+                
+                const input = document.querySelector('.chat-input-field');
+                const message = input.value.trim();
+                
+                if (message) {
+                    // 添加用戶消息
+                    const chatMessages = document.getElementById('chatMessages');
+                    const userMessage = document.createElement('div');
+                    userMessage.className = 'message user';
+                    userMessage.innerHTML = `
+                        <div class="message-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="message-bubble">${message}</div>
+                    `;
+                    chatMessages.appendChild(userMessage);
+                    
+                    // 清空輸入框
+                    input.value = '';
+                    
+                    // 模擬AI回應
+                    setTimeout(() => {
+                        const aiMessage = document.createElement('div');
+                        aiMessage.className = 'message';
+                        aiMessage.innerHTML = `
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-bubble">感謝您的問題！這是一個模擬回應。在實際應用中，這裡會連接到Go後端API進行處理。</div>
+                        `;
+                        chatMessages.appendChild(aiMessage);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 1000);
+                    
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }
+        });
+    </script>
+   </div>
+</body>
+</html>    
