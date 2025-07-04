@@ -11,11 +11,14 @@
    <link rel="manifest" href="images/site.webmanifest">
    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.min.js"></script>
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+   <link rel= "stylesheet" href= "https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css" >
    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">    
    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
    <script src="https://unpkg.com/htmx-ext-sse@2.2.3" integrity="sha384-Y4gc0CK6Kg+hmulDc6rZPJu0tqvk7EWlih0Oh+2OkAi1ZDlCbBDCQEE2uVk472Ky" crossorigin="anonymous"></script>
    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+   <script src="js/memorymanager.js?v=006"></script>
+   <script src="js/languages.js"></script>
    <style>
        :root {
            --primary-color: #4facfe;
@@ -179,6 +182,40 @@
            background: var(--primary-color);
            color: white;
        }
+
+       /*  語言切換  */
+       .lang-switcher {
+            display: flex;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .lang-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
 
        /* 主要內容區域 */
        .main-content {
@@ -704,7 +741,7 @@
                 <button class="sidebar-toggle" onclick="toggleSidebar()" title="隱藏/顯示側邊欄">
                    <i class="fas fa-bars"></i>
                 </button>
-                <div class="sidebar-brand">Jii Chat 雞聊</div>
+                <div class="sidebar-brand" data-zh="Jii Chat 雞聊" data-en="Jii Chat">Jii Chat 雞聊</div>
             </div>           
             <div class="sidebar-icons">
                 <div class="sidebar-icon" title="聊天">
@@ -725,14 +762,15 @@
                   <select id="model-dropdown" hx-get="/models" hx-trigger="load" hx-swap="none">
                   </select>
                </div>
-                <h2>功能選單</h2>
+                <h2 data-zh="功能選單" data-en="Menu">功能選單</h2>
                 <nav>
                     <ul class="nav-menu"> 
                         <li class="nav-item">
-                            <a href="#" class="nav-link active" hx-post="/new-chat" hx-trigger="click" hx-target="#chat-container" hx-swap="innerHTML">
-                               <i class="fas fa-plus"></i>新對話                                
+                            <a href="#" class="nav-link active" hx-post="/new-chat" hx-trigger="click" hx-target="#chat-container" hx-swap="innerHTML" >
+                               <i class="las la-broom"></i><span  data-zh="新對話（含紀錄）" data-en="New Chat">新對話（含紀錄）</span>                              
                             </a>
                         </li>
+<!--                         
                         <li class="nav-item">
                             <a href="#" class="nav-link" hx-get="/api/models" hx-target="#info-panel">
                                 <i class="fas fa-brain"></i>
@@ -763,6 +801,7 @@
                                 使用統計
                             </a>
                         </li>
+-->                        
                     </ul>
                 </nav>
             </div>
@@ -776,8 +815,8 @@
                        <img src="images/jclogo.png" border="0">
                     </div>
                     <div class="chat-info">
-                        <h3>AI 助手</h3>
-                        <div class="chat-status">在線 • 立即回應</div>
+                        <h3 data-zh="AI 助手" data-en="AI assistant">AI 助手</h3>
+                        <div class="chat-status" data-zh="在線 • 立即回應" data-en="Online • Responding Instantly">在線 • 立即回應</div>
                     </div>
                 </div>
                 
@@ -785,7 +824,7 @@
                     <!-- 功能工具列 -->
                     <div class="function-toolbar">
                         <button class="function-btn" data-tooltip="待辦事項" onclick="toggleTodoList()">
-                            <img src="images/todolist.png" alt="列出所有待辦事項"><br>待辦事項
+                            <img src="images/todolist.png" alt="列出所有待辦事項"><br><span data-zh="待辦事項" data-en="To-do list">待辦事項</span>
                         </button>
                         <button class="function-btn" data-tooltip="英翻中" onclick="setTranslationMode('en-to-zh')">
                             <i class="fas fa-language"></i>
@@ -806,8 +845,12 @@
                         <div class="user-avatar">王</div>
                         <div>
                             <div class="user-name">王小明</div>
-                            <div class="user-status">線上</div>
+                            <div class="user-status" data-zh="線上" data-en="Online">線上</div>
                         </div>
+                    </div>
+                    <div class="lang-switcher">
+                       <button class="lang-btn active" onclick="switchLanguage('zh')">中文</button>
+                       <button class="lang-btn" onclick="switchLanguage('en')">English</button>
                     </div>
                 </div>
             </div>
@@ -817,7 +860,7 @@
                     <div class="message-avatar0">
                         <img src="images/jiiChat04.png" border="0">
                     </div>
-                    <div class="message-bubble ai-message">
+                    <div class="message-bubble ai-message" data-zh="您好！我是AI助手，很高興為您服務。有什麼問題需要幫助嗎？" data-en="Hello! I'm an AI assistant, and I'm happy to help. Do you have any questions I can assist you with?">
                         您好！我是AI助手，很高興為您服務。有什麼問題需要幫助嗎？
                     </div>
                 </div>
@@ -838,19 +881,18 @@
 
         <!-- 資訊面板 -->
         <div class="info-panel" id="info-panel">
-
             <div class="hero-section">
                 <span class="hero-title"><img src="images/jiichat_logo.png" border="0" title="Jii Chat 雞聊"></span>
-                <p class="hero-subtitle">一款清爽介面的人工智慧對話平台，品牌意象（Jii = 雞的叫聲）和聊天、社群功能，融合「雞聊」的在地感與可愛風格。</p>
+                <p class="hero-subtitle" data-zh="一款清爽介面的人工智慧對話平台，品牌意象（Jii = 雞的叫聲）和聊天、社群功能，融合「雞聊」的在地感與可愛風格。" data-en="JiiChat is a refreshing AI conversation platform that combines a clean interface with a brand image (Jii = chicken's chirp) and chat/social functions, blending a local, cute style with the concept of 'chicken chat.'">一款清爽介面的人工智慧對話平台，品牌意象（Jii = 雞的叫聲）和聊天、社群功能，融合「雞聊」的在地感與可愛風格。</p>
             </div>
 
             <!-- 優化的響應式 Bento Grid 卡片布局 -->
             <div class="bento-grid">
                 <div class="bento-card card-large">
                     <div>
-                        <h3 class="card-title">對話統計</h3>
-                        <div class="card-number">2.4K</div>
-                        <p class="card-description">本月已處理對話數量，AI回應準確率達98.5%</p>
+                        <h3 class="card-title" data-zh="對話統計" data-en="Conversation Statistics">對話統計</h3>
+                        <div class="card-number" id="talkNumber">0</div>
+                        <p class="card-description" data-zh="目前已處理對話數量，AI回應準確率達98.5%" data-en="AI response accuracy has reached 98.5% for all processed conversations.">目前已處理對話數量，AI回應準確率達98.5%</p>
                     </div>
                 </div>
 
@@ -928,8 +970,9 @@
     </div>
 
     <script>
- var messageInput;
-
+// 全局變數
+var messageInput;
+var memoryManager;
 const parser = new DOMParser();
 
 // 取得模型的下拉選單
@@ -1009,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', function() {
     messageInput = document.getElementById('message-input');
     const fileInput = document.getElementById('file-input');
     const mainContent = document.getElementById('main-content');
+    memoryManager = new MemoryManager();  // 初始化記憶體管理器
     var prefix = ""; 
 
     // 設定模型
@@ -1023,7 +1067,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // HTMX事件處理器
-    document.body.addEventListener('htmx:afterSwap', function(event) {      
+    document.body.addEventListener('htmx:afterSwap', function(event) {   
+        if(event.detail.target.id == "chat-container") {
+            memoryManager.clearMemory();  // 清除記憶體管理器
+            return;
+        }
         const newElements = event.detail.target.querySelectorAll('[id^="message-"]');  // 如果新增了訊息元素並且有特定的ID
         newElements.forEach(element => {
             const messageId = element.id.replace('message-', '');
@@ -1049,6 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-bubble">${message}</div>
         `;
         chatMessages.appendChild(userMessage);
+        memoryManager.addMessage('user', message); // 添加到記憶體管理器
         if(containsLaTeX(text)) { renderMathJax(userMessage); } 
         messageInput.value = '';  // 清空輸入框
         chatContainer.scrollTop = chatContainer.scrollHeight;  // 滾動到底部
@@ -1070,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-bubble">${text}</div>
         `;
         chatMessages.appendChild(aiMessage);
+        memoryManager.addMessage('ai', text);  // 添加到記憶體管理器
         if(containsLaTeX(text)) { renderMathJax(aiMessage); } 
         chatMessages.scrollTop = chatMessages.scrollHeight;  // 滾動到底部           
         return chatMessages; // 返回訊息元素以便後續使用
