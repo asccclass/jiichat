@@ -16,9 +16,10 @@
    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
    <script src="https://unpkg.com/htmx-ext-sse@2.2.3" integrity="sha384-Y4gc0CK6Kg+hmulDc6rZPJu0tqvk7EWlih0Oh+2OkAi1ZDlCbBDCQEE2uVk472Ky" crossorigin="anonymous"></script>
    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><!-- 數學表達式 -->
    <script src="js/memorymanager.js?v=006"></script>
    <script src="js/languages.js"></script>
+   <script src="js/recognition.js?v=004"></script>
    <style>
        :root {
            --primary-color: #4facfe;
@@ -182,7 +183,20 @@
            background: var(--primary-color);
            color: white;
        }
-
+       /* 麥克風 */
+       #mic-button {
+          cursor: pointer;
+          transition: transform 0.1s;
+       }
+       #mic-button:hover {
+          transform: scale(1.1);
+       }
+        
+       #mic-button:active {
+          background-color: #f87171; /* 按下時的紅色 */
+          color: white;
+          transform: scale(0.95);
+       }
        /*  語言切換  */
        .lang-switcher {
             display: flex;
@@ -983,6 +997,7 @@
                     <textarea id="message-input" name="message-input" placeholder="輸入您的問題..." required class="chat-input-field" 
                         onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.form.dispatchEvent(new Event('submit')); }"></textarea>
                     <button class="send-button" id="send-button" type="submit"><i class="fas fa-paper-plane"></i></button>
+                    <button class="send-button" id="mic-button" onclick="recognition.toggleRecognition()"><i class="fa-solid fa-microphone"></i></button>
                 </div>
                </form>
             </div>
@@ -1321,6 +1336,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('file-input');
     const mainContent = document.getElementById('main-content');
     memoryManager = new MemoryManager();  // 初始化記憶體管理器
+    InitializeSpeechRecognition(); // 初始化語音識別功能
     var prefix = ""; 
 
     // 設定模型
@@ -1433,7 +1449,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 提交表單時處理用戶消息並連接SSE
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
-        sendMessage(messageInput.value) ;
+        sendMessage(messageInput.value);
+        if(recognition) recognition.stopRecognition();  // 停止語音識別
     });
 });
 
