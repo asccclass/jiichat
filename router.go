@@ -27,5 +27,6 @@ func NewRouter(srv *SherryServer.Server, documentRoot string)(*http.ServeMux) {
    router.Handle("/new-chat", http.HandlerFunc(handleNewChat))
    router.Handle("/sse", http.HandlerFunc(SSEChat))
    router.Handle("/send-message", http.HandlerFunc(handleSendMessage))
+   router.Handle("POST /video/analyze", http.HandlerFunc(handleImageAnalyze))
    return router
 }

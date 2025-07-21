@@ -414,6 +414,111 @@
            background: #3b82f6;
            transform: translateY(-2px);
        }
+ 
+       /* 攝像頭區域 */
+.camera-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .camera-container {
+            position: relative;
+            background: #f8f9ff;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 4/3;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #canvas {
+            display: none;
+        }
+.status-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-live {
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+        }
+
+        .status-analyzing {
+            background: rgba(251, 191, 36, 0.9);
+            color: white;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+        }     
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }  
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .videoBtnX {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        .videoBtnX:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .videoBtnX:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .videoBtnX-stop {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .videoBtnX-stop:hover:not(:disabled) {
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+       /* end of 攝像頭區域 */
 
        /* 資訊面板 - 優化的 Bento Grid */
        .info-panel {
@@ -641,6 +746,10 @@
            .hero-subtitle {
                font-size: 0.875rem;
            }
+           .videoBtnX {
+                width: 100%;
+                max-width: 200px;
+            }
        }
 
        @media (max-width: 480px) {
@@ -888,6 +997,25 @@
 
             <!-- 優化的響應式 Bento Grid 卡片布局 -->
             <div class="bento-grid">
+                
+                <div class="bento-card card-large">
+                    <div class="camera-section">
+                        <div class="camera-container">
+                            <video id="video" autoplay muted playsinline></video>
+                            <canvas id="canvas"></canvas>
+                            <div id="status" class="status-indicator status-error">
+                            <div class="pulse"></div>
+                            <span>攝像頭未啟動</span>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button id="start-btn" class="videoBtnX">🎥 啟動攝像頭</button>
+                        <button id="stop-btn" class="videoBtnX videoBtn-stop" disabled>⏹️  停止分析</button>
+                    </div>
+                </div>
+                </div>
+
                 <div class="bento-card card-large">
                     <div>
                         <h3 class="card-title" data-zh="對話統計" data-en="Conversation Statistics">對話統計</h3>
@@ -974,6 +1102,146 @@
 var messageInput;
 var memoryManager;
 const parser = new DOMParser();
+
+// 初始化攝像頭
+let video, canvas, ctx;
+let stream = null;
+let analysisInterval = null;
+let isAnalyzing = false;
+let nextAnalysisTime = 0;
+
+const startBtn = document.getElementById('start-btn');
+const stopBtn = document.getElementById('stop-btn');
+const status = document.getElementById('status');
+
+/*
+const timer = document.getElementById('timer');
+const loading = document.getElementById('loading');
+const results = document.getElementById('results');
+*/
+
+// 更新狀態顯示
+function updateStatus(type, text) {
+    status.className = 'status-indicator status-' + type;
+    status.querySelector('span').textContent = text;
+}
+
+// 停止分析
+function stopAnalysis() {
+    if (analysisInterval) {
+        clearInterval(analysisInterval);
+        analysisInterval = null;
+    }
+
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    video.srcObject = null;
+    updateStatus('error', '攝像頭未啟動');
+    
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    // timer.textContent = '等待啟動...';
+}
+
+// 開始自動分析
+function startAnalysis() {
+    if(analysisInterval) clearInterval(analysisInterval);
+    captureAndAnalyze();  // 立即進行第一次分析
+    analysisInterval = setInterval(captureAndAnalyze, 10000);  // 每10秒分析一次
+    // updateTimer();  // 更新計時器
+}
+
+// 抓取畫面並分析
+async function captureAndAnalyze() {
+    if(isAnalyzing || !video.videoWidth) return;
+    
+    isAnalyzing = true;
+    updateStatus('analyzing', '🔄 AI 分析中');
+    // loading.style.display = 'block';
+
+    try {
+        // 將影片畫面繪製到canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // 轉換為blob
+        canvas.toBlob(async function(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'capture.jpg');
+
+            try {
+                const response = await fetch('/video/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.text();
+                // addResult(result);
+                console.log('分析結果:', result);
+            } catch (error) {
+                console.error('分析請求失敗:', error);
+                /*
+                addResult('<div class="result-item error"><div class="result-timestamp">' + 
+                        new Date().toLocaleString() + 
+                        '</div><div class="result-content">網路錯誤，無法進行分析</div></div>');
+                        */
+            }
+
+            isAnalyzing = false;
+            loading.style.display = 'none';
+            updateStatus('live', '🔴 即時畫面');
+        }, 'image/jpeg', 0.8);
+
+    } catch (error) {
+        console.error('畫面擷取失敗:', error);
+        isAnalyzing = false;
+        loading.style.display = 'none';
+        updateStatus('live', '🔴 即時畫面');
+    }
+}
+
+function initIalVideo() {
+   video = document.getElementById('video');
+   canvas = document.getElementById('canvas');
+   ctx = canvas.getContext('2d');
+
+   // 啟動攝像頭
+    startBtn.addEventListener('click', async function() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                }
+            });
+
+            video.srcObject = stream;
+            updateStatus('live', '🔴 即時畫面');
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            // 等待影片載入完成後開始分析
+            video.addEventListener('loadeddata', function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                startAnalysis();
+            });
+
+        } catch (error) {
+            console.error('無法啟動攝像頭:', error);
+            updateStatus('error', '❌ 攝像頭啟動失敗');
+            alert('無法存取攝像頭，請檢查權限設定');
+        }
+    });
+
+    // 停止分析
+    stopBtn.addEventListener('click', function() {
+        stopAnalysis();
+    });
+}
 
 // 取得模型的下拉選單
 document.addEventListener("htmx:afterRequest", function (event) {
@@ -1207,6 +1475,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 初始化動畫
         document.addEventListener('DOMContentLoaded', function() {
+            // 初始化攝像頭
+            initIalVideo();
             // 側邊欄默認開啟
             const container = document.getElementById('mainContainer');
             container.classList.add('sidebar-open');
@@ -1294,6 +1564,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+
+// 頁面卸載時清理資源
+window.addEventListener('beforeunload', function() {
+    stopAnalysis();
+});
     </script>
    </div>
 </body>
