@@ -192,13 +192,10 @@ func(app *OllamaClient) Ask(modelName, userinput string, base64Image string, fil
       Stream: false,          // 不使用串流模式
    }
    // 如果有上傳圖片，將圖片編碼為 base64 並添加到請求中
-   fmt.Println(len(base64Image))
    if base64Image != "" {
-fmt.Println(prompt)
       reqBody.Images = []string{base64Image}
    } else {
-      // MCP 工具套用   
-      toolsResponse, err := RunTools(reqBody, prompt)  // (map[string]interface, error)   
+      toolsResponse, err := RunTools(reqBody, prompt)  // (map[string]interface, error)    // MCP 工具套用
       if err == nil {  // 如果有工具套用，則使用工具回應
          // jData, err := app.Prompt2String(reqBody, "user", "把下列內容，用人類的語氣重新改寫，請使用繁體中文回答，並去除掉簡體字：" + toolsResponse)  // 如果沒有工具套用，則使用原始提示
          // if err != nil {   
@@ -208,9 +205,14 @@ fmt.Println(prompt)
             fmt.Println("Tools response:", toolsResponse)
          }
          // return app.Send2LLM(string(jData))
+      } else {
+         fmt.Println("toolsResponse RunTools error:", err.Error())
       }
    }
    jData, err := app.Prompt2String(reqBody, "user", prompt)  // 如果沒有工具套用，則使用原始提示
+   if os.Getenv("Debug") == "true" {
+      fmt.Println("Prompt2String:", jData)
+   }
    if err != nil {   
       fmt.Print("Prepare prompt failed: ", err.Error())
       return "", fmt.Errorf("prepare prompt for ollama: %s", err.Error())

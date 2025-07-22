@@ -47,7 +47,7 @@ func handleImageAnalyze(w http.ResponseWriter, r *http.Request) {
    }
    response := ""   
 
-      prompt = `請簡潔但詳細地描述當前畫面中看到的內容，包括：
+      prompt := `請簡潔但詳細地描述當前畫面中看到的內容，包括：
 1. 主要物體、人物或活動
 2. 場景位置和環境
 3. 值得注意的變化或動作

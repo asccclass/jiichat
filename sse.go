@@ -52,10 +52,9 @@ func ResponseChunks(response string) ([]ChatMessage) {
 
 // AI回應（TODO: 需要增加記憶體）
 func AIResponse(model, userMessage string)([]ChatMessage) {
-   // 根據不同模型準備不同的回應
    response := ""
    var err error
-   if os.Getenv("OllamaUrl") != "" {
+   if os.Getenv("OllamaUrl") != "" {   // 根據不同模型準備不同的回應
       ola := AIs["Ollama"].(*OllamaClient)
       response, err = ola.Ask(model, userMessage, "", nil)
       if err != nil {
