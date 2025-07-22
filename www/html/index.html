@@ -1124,6 +1124,7 @@ let stream = null;
 let analysisInterval = null;
 let isAnalyzing = false;
 let nextAnalysisTime = 0;
+let intervalTimeis = 20000; // 每次分析間隔時間
 
 const startBtn = document.getElementById('start-btn');
 const stopBtn = document.getElementById('stop-btn');
@@ -1139,6 +1140,35 @@ const results = document.getElementById('results');
 function updateStatus(type, text) {
     status.className = 'status-indicator status-' + type;
     status.querySelector('span').textContent = text;
+}
+
+// 更新計時器
+function updateTimer() {
+   if(!analysisInterval) return;
+    
+   const updateTimerDisplay = () => {
+      const now = Date.now();
+      const nextTime = nextAnalysisTime || now + intervalTimeis;
+      const remaining = Math.max(0, Math.ceil((nextTime - now) / 1000));
+        
+      if (remaining === 0) {
+         updateStatus('analyzing', '🔄 AI 分析中');
+         startAnalysis()
+         nextAnalysisTime = now + intervalTimeis;
+      } else {
+         updateStatus('live', `下次分析: ${remaining}秒`);
+      }
+    };
+    nextAnalysisTime = Date.now() + intervalTimeis;
+    updateTimerDisplay();
+    
+    const timerInterval = setInterval(() => {
+        if (!analysisInterval) {
+            clearInterval(timerInterval);
+            return;
+        }
+        updateTimerDisplay();
+    }, 1000);
 }
 
 // 停止分析
@@ -1165,53 +1195,48 @@ function startAnalysis() {
     if(analysisInterval) clearInterval(analysisInterval);
     captureAndAnalyze();  // 立即進行第一次分析
     analysisInterval = setInterval(captureAndAnalyze, 10000);  // 每10秒分析一次
-    // updateTimer();  // 更新計時器
+    updateTimer();  // 更新計時器
 }
 
 // 抓取畫面並分析
 async function captureAndAnalyze() {
     if(isAnalyzing || !video.videoWidth) return;
-    
     isAnalyzing = true;
     updateStatus('analyzing', '🔄 AI 分析中');
     // loading.style.display = 'block';
-
     try {
         // 將影片畫面繪製到canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
         // 轉換為blob
         canvas.toBlob(async function(blob) {
             const formData = new FormData();
             formData.append('image', blob, 'capture.jpg');
-
             try {
                 const response = await fetch('/video/analyze', {
                     method: 'POST',
                     body: formData
                 });
-
                 const result = await response.text();
                 // addResult(result);
                 console.log('分析結果:', result);
             } catch (error) {
                 console.error('分析請求失敗:', error);
+                updateStatus('error', '❌ 網路錯誤，請求失敗');
                 /*
                 addResult('<div class="result-item error"><div class="result-timestamp">' + 
                         new Date().toLocaleString() + 
                         '</div><div class="result-content">網路錯誤，無法進行分析</div></div>');
-                        */
+                */
             }
-
             isAnalyzing = false;
-            loading.style.display = 'none';
+            // loading.style.display = 'none';
             updateStatus('live', '🔴 即時畫面');
         }, 'image/jpeg', 0.8);
 
     } catch (error) {
         console.error('畫面擷取失敗:', error);
         isAnalyzing = false;
-        loading.style.display = 'none';
+        // loading.style.display = 'none';
         updateStatus('live', '🔴 即時畫面');
     }
 }
@@ -1220,10 +1245,9 @@ function initIalVideo() {
    video = document.getElementById('video');
    canvas = document.getElementById('canvas');
    ctx = canvas.getContext('2d');
-
-   // 啟動攝像頭
-    startBtn.addEventListener('click', async function() {
-        try {
+   
+   startBtn.addEventListener('click', async function() {  // 啟動攝像頭
+      try {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 640 },
@@ -1231,13 +1255,10 @@ function initIalVideo() {
                     facingMode: 'user'
                 }
             });
-
             video.srcObject = stream;
             updateStatus('live', '🔴 即時畫面');
-            
             startBtn.disabled = true;
             stopBtn.disabled = false;
-
             // 等待影片載入完成後開始分析
             video.addEventListener('loadeddata', function() {
                 canvas.width = video.videoWidth;
@@ -1245,11 +1266,11 @@ function initIalVideo() {
                 startAnalysis();
             });
 
-        } catch (error) {
+      } catch (error) {
             console.error('無法啟動攝像頭:', error);
             updateStatus('error', '❌ 攝像頭啟動失敗');
             alert('無法存取攝像頭，請檢查權限設定');
-        }
+      }
     });
 
     // 停止分析
