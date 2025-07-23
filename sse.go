@@ -15,6 +15,37 @@ type ChatMessage struct {
    Content string `json:"content"`
 }
 
+// 輸出 SSEChat 處理的聊天結果
+func Response2User(w http.ResponseWriter, responses []ChatMessage) { 
+   flusher, ok := w.(http.Flusher)  // 創建SSE刷新器
+   if !ok {
+      http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+      return
+   }
+   // 逐步發送回應片段 SSE 格式要求每行以 \n 結尾，而 \r\n 會被視為額外的換行符。
+   for _, chunk := range responses {      
+      data, err := json.Marshal(chunk)  // 將消息轉換為JSON
+      if err != nil {
+         fmt.Println("JSON編碼錯誤:", err)
+         continue
+      }
+      cleanContent := strings.ReplaceAll(string(data), "\r\n", "\\n")
+      cleanContent = strings.ReplaceAll(cleanContent, "\r", "\\n")
+      cleanContent = strings.ReplaceAll(cleanContent, "\n", "\\n")
+      fmt.Fprintf(w, "data: %s\n\n", cleanContent)  // 發送SSE格式的消息
+      // flusher.Flush()
+      time.Sleep(50 * time.Millisecond)  // 模擬打字延遲
+   }
+
+   completeMsg := ChatMessage{  // 發送完成信號
+      Type:    "complete",
+      Content: "",
+   }
+   completeData, _ := json.Marshal(completeMsg)
+   fmt.Fprintf(w, "data: %s\n\n", completeData)
+   flusher.Flush()
+}
+
 // 寫入響應
 func ResponseChunks(response string) ([]ChatMessage) {
    chunks := []ChatMessage{}
@@ -34,19 +65,11 @@ func ResponseChunks(response string) ([]ChatMessage) {
          })
       }
    } else {  // 如果不需要流式輸出，則直接返回完整的回應
-      /*
-      s, err := MarkdownToHTML(response)
-      if err != nil {
-         s = response   
-      }
-         */
-
       chunks = append(chunks, ChatMessage{
          Type:    "chunk",
          Content: response,
       })
    }
-   // fmt.Printf("模型: %s，使用者消息: %s，AI回應：%s\n", model, userMessage, response)
    return chunks
 }
 
@@ -64,52 +87,23 @@ func AIResponse(model, userMessage string)([]ChatMessage) {
    return ResponseChunks(response)
 }
 
-// 輸出 SSEChat 處理的聊天結果
-func ResponseUser(w http.ResponseWriter, responses []ChatMessage) { 
+// 接收 SSE 請求並處理聊天
+func SSEChat(w http.ResponseWriter, r *http.Request) {   
    w.Header().Set("Content-Type", "text/event-stream")
    w.Header().Set("Cache-Control", "no-cache")
    w.Header().Set("Connection", "keep-alive")
    w.Header().Set("Access-Control-Allow-Origin", "*")
-   
-   flusher, ok := w.(http.Flusher)  // 創建SSE刷新器
-   if !ok {
-      http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
-      return
-   }
-   // 逐步發送回應片段 SSE 格式要求每行以 \n 結尾，而 \r\n 會被視為額外的換行符。
-   for _, chunk := range responses {      
-      data, err := json.Marshal(chunk)  // 將消息轉換為JSON
-      if err != nil {
-         fmt.Println("JSON編碼錯誤:", err)
-         continue
-      }
-      cleanContent := strings.ReplaceAll(string(data), "\r\n", "\\n")
-      cleanContent = strings.ReplaceAll(cleanContent, "\r", "\\n")
-      cleanContent = strings.ReplaceAll(cleanContent, "\n", "\\n")
-      fmt.Fprintf(w, "data: %s\n\n", cleanContent)  // 發送SSE格式的消息
-      flusher.Flush()
-      time.Sleep(100 * time.Millisecond)  // 模擬打字延遲
-   }
-
-   completeMsg := ChatMessage{  // 發送完成信號
-      Type:    "complete",
-      Content: "",
-   }
-   completeData, _ := json.Marshal(completeMsg)
-   fmt.Fprintf(w, "data: %s\n\n", completeData)
-   flusher.Flush()
-}
-
-// 接收 SSE 請求並處理聊天
-func SSEChat(w http.ResponseWriter, r *http.Request) {  
-   // 獲取用戶消息和選擇的模型
+     
    message := r.URL.Query().Get("message")
    model := r.URL.Query().Get("model")
    if message == "" {
       fmt.Println("使用者傳送空白資訊")
       return
    }
-   ResponseUser(w, AIResponse(model, message))  // 模擬AI回應模式 
+   res :=  AIResponse(model, message)
+   if len(res) > 0 {
+      Response2User(w, res)  // 模擬AI回應模式 
+   }
 }
 
 // 處理新對話請求

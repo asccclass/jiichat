@@ -164,19 +164,14 @@ func RunTools(req GenerateRequest, prompt string)(string, error) {
 		}
       s, err := parseIntent(req, prompt, srv) // (map[string]interface{}, error)	
       if err != nil {
-			fmt.Println("解析意圖失敗:", err.Error())
-         continue  // 如果解析失敗，則跳過
+         continue  // 如果解析不相關，則跳過  fmt.Println("解析意圖不相關:", err.Error())
       }
       action, ok := s["action"].(string)
-		if os.Getenv("Debug") == "true" {
-         fmt.Println("Action:", action)
-		}
       if !ok || action == "general_chat"{
 	      continue  // 如果沒有動作，則跳過
 	   }
 		tool, err := SearchTool(srv, action)  // (string, error)
 		if err != nil {
-			fmt.Errorf("查找工具失敗: %s", err.Error())
 			continue  // 如果查找工具失敗，則跳過
 		}
       parameters, ok := s["parameters"].(map[string]interface{})

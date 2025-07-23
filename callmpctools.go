@@ -79,7 +79,6 @@ func callMCPTool(toolName string, args map[string]interface{}) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("read response: %s", err.Error())
 	}
-	fmt.Println("MCPServer 回傳結果:" + string(body))  // MCPServer 回傳結果
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("server error (status %d): %s", resp.StatusCode, string(body))
 	}

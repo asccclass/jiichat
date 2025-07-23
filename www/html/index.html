@@ -1202,7 +1202,7 @@ function startAnalysis() {
 async function captureAndAnalyze() {
     if(isAnalyzing || !video.videoWidth) return;
     isAnalyzing = true;
-    updateStatus('analyzing', '🔄 AI 分析中');
+    // updateStatus('analyzing', '🔄 AI 分析中');  // 有對焦問題，第一次建議不要直接抓圖
     // loading.style.display = 'block';
     try {
         // 將影片畫面繪製到canvas
@@ -1210,6 +1210,7 @@ async function captureAndAnalyze() {
         // 轉換為blob
         canvas.toBlob(async function(blob) {
             const formData = new FormData();
+            // formData.append('message', 'test');
             formData.append('image', blob, 'capture.jpg');
             try {
                 const response = await fetch('/video/analyze', {
@@ -1218,7 +1219,7 @@ async function captureAndAnalyze() {
                 });
                 const result = await response.text();
                 // addResult(result);
-                console.log('分析結果:', result);
+                // console.log('分析結果:', result);
             } catch (error) {
                 console.error('分析請求失敗:', error);
                 updateStatus('error', '❌ 網路錯誤，請求失敗');
@@ -1248,6 +1249,9 @@ function initIalVideo() {
    
    startBtn.addEventListener('click', async function() {  // 啟動攝像頭
       try {
+            updateStatus('live', '🔴 即時畫面');
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 640 },
@@ -1256,14 +1260,11 @@ function initIalVideo() {
                 }
             });
             video.srcObject = stream;
-            updateStatus('live', '🔴 即時畫面');
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
             // 等待影片載入完成後開始分析
             video.addEventListener('loadeddata', function() {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                startAnalysis();
+                startAnalysis(); 
             });
 
       } catch (error) {
@@ -1435,8 +1436,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.sendMessage = function(message) {
         if(!message)  message = messageInput.value.trim();
         if(!message)  return;  // 如果沒有輸入訊息則不處理
-        // 連接到SSE端點
         const selectedModel = document.getElementById('model-dropdown').value;
+        // 連接到SSE端點
         const eventSource = new EventSource(`/sse?message=${encodeURIComponent(prefix + message)}&model=${encodeURIComponent(selectedModel)}`);
         let currentAiMessage = null;
         addUserMessage(message);  // 添加使用者訊息到聊天
@@ -1460,18 +1461,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 錯誤處理
         eventSource.onerror = function(e) {
-            eventSource.close();
+            console.log('SSE連接錯誤:', e);
             addAIMessage('連接出現問題，請稍後再試。'); // 顯示錯誤消息
-            console.error('SSE連接錯誤:', e);
+            eventSource.close();
         };
         messageInput.value = '';   // 清空輸入框
-    }
+    };
 
     // 提交表單時處理用戶消息並連接SSE
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         sendMessage(messageInput.value);
-        if(recognition) recognition.stopRecognition();  // 停止語音識別
+        if(recognition) recognition.stop();  // 停止語音識別
     });
 });
 
@@ -1497,8 +1498,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('切換語言');
             const currentLang = document.documentElement.lang;
             if (currentLang === 'zh-TW') {
-                document.documentElement.lang = 'en';
-                // 可以在這裡實現語言切換邏輯
+                document.documentElement.lang = 'en';  // 可以在這裡實現語言切換邏輯
                 alert('語言切換功能開發中...');
             } else {
                 document.documentElement.lang = 'zh-TW';
@@ -1506,15 +1506,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function showMoreFunctions() {
-            console.log('顯示更多功能');
-            // 這裡可以顯示更多功能選單
+            console.log('顯示更多功能');  // 這裡可以顯示更多功能選單            
             alert('更多功能即將推出...');
         }
 
         // 初始化動畫
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始化攝像頭
-            initIalVideo();
+            initIalVideo();  // 開啟攝影機鏡頭
             // 側邊欄默認開啟
             const container = document.getElementById('mainContainer');
             container.classList.add('sidebar-open');

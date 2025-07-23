@@ -77,6 +77,7 @@ type GenerateResponse struct {
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+   Images  []string `json:"images,omitempty"` // 圖片列表
 }
 
 // 生成請求結構
@@ -150,10 +151,15 @@ func(app *OllamaClient) ListModelsFromWeb(w http.ResponseWriter, r *http.Request
 }
 
 // 送出給Ollams
-func(app *OllamaClient) Send2LLM(jsonData string)(string, error) {
-   resp, err := http.Post(app.URL+"/api/chat", "application/json", bytes.NewBuffer([]byte(jsonData))) // 發送請求給 Ollama   
+func(app *OllamaClient) Send2LLM(jsonData string, isImage bool)(string, error) {
+   chatType := "chat"
+   //if isImage {
+     // chatType = "generate"
+   //}
+   fmt.Println(chatType, isImage)
+   resp, err := http.Post(app.URL+"/api/" + chatType, "application/json", bytes.NewBuffer([]byte(jsonData))) // 發送請求給 Ollama   
    if err != nil {
-      return "", fmt.Errorf("發送請求失敗: %v", err)
+      return "", fmt.Errorf("發送請求失敗: %s", err.Error())
    }
    defer resp.Body.Close()
    if resp.StatusCode != http.StatusOK { // 如果狀態碼不是 200 OK，則返回錯誤
@@ -168,8 +174,13 @@ func(app *OllamaClient) Send2LLM(jsonData string)(string, error) {
 }
 
 // 轉換 GenerateRequest 為字串格式
-func(app *OllamaClient) Prompt2String(req GenerateRequest, role, prompt string)(string, error) {
-   req.Messages = append(req.Messages, Message{Role: role, Content: prompt})  // 如果沒有工具套用，則使用原始提示
+func(app *OllamaClient) Prompt2String(req GenerateRequest, role, prompt, base64Image string)(string, error) {
+   if base64Image != "" {
+      req.Images = []string{base64Image}
+      req.Messages = append(req.Messages, Message{Role: role, Content: prompt, Images: []string{base64Image}})  // 如果沒有工具套用，則使用原始提示
+   } else {
+      req.Messages = append(req.Messages, Message{Role: role, Content: prompt})
+   }
    jData, err := json.Marshal(req)  // 將請求轉為 JSON
    if err != nil {
       return "", fmt.Errorf("Marshal request failed, 序列化請求失敗: %v", err)
@@ -178,7 +189,7 @@ func(app *OllamaClient) Prompt2String(req GenerateRequest, role, prompt string)(
 }
 
 // 產生回應（非串流模式） ola.Ask(model, userMessage, nil)
-func(app *OllamaClient) Ask(modelName, userinput string, base64Image string, files []string) (string, error) {
+func(app *OllamaClient) Ask(modelName, userinput, base64Image string, files []string) (string, error) {
    prompt := strings.TrimSpace(userinput)
    if prompt == "" {
       return "", fmt.Errorf("No data")
@@ -191,10 +202,7 @@ func(app *OllamaClient) Ask(modelName, userinput string, base64Image string, fil
       Messages: []Message{},   // role, content
       Stream: false,          // 不使用串流模式
    }
-   // 如果有上傳圖片，將圖片編碼為 base64 並添加到請求中
-   if base64Image != "" {
-      reqBody.Images = []string{base64Image}
-   } else {
+   if base64Image == "" {   // 不是上傳圖檔才需要檢查 MCP 工具
       toolsResponse, err := RunTools(reqBody, prompt)  // (map[string]interface, error)    // MCP 工具套用
       if err == nil {  // 如果有工具套用，則使用工具回應
          // jData, err := app.Prompt2String(reqBody, "user", "把下列內容，用人類的語氣重新改寫，請使用繁體中文回答，並去除掉簡體字：" + toolsResponse)  // 如果沒有工具套用，則使用原始提示
@@ -205,14 +213,9 @@ func(app *OllamaClient) Ask(modelName, userinput string, base64Image string, fil
             fmt.Println("Tools response:", toolsResponse)
          }
          // return app.Send2LLM(string(jData))
-      } else {
-         fmt.Println("toolsResponse RunTools error:", err.Error())
-      }
+      } 
    }
-   jData, err := app.Prompt2String(reqBody, "user", prompt)  // 如果沒有工具套用，則使用原始提示
-   if os.Getenv("Debug") == "true" {
-      fmt.Println("Prompt2String:", jData)
-   }
+   jData, err := app.Prompt2String(reqBody, "user", prompt, base64Image)  // 如果沒有工具套用，則使用原始提示
    if err != nil {   
       fmt.Print("Prepare prompt failed: ", err.Error())
       return "", fmt.Errorf("prepare prompt for ollama: %s", err.Error())
@@ -235,7 +238,7 @@ func(app *OllamaClient) Ask(modelName, userinput string, base64Image string, fil
    	}
    }
 */
-   return app.Send2LLM(string(jData))
+   return app.Send2LLM(string(jData), (base64Image != ""))
 }
 
 func(app *OllamaClient) AddRouter(router *http.ServeMux) {

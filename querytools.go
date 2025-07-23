@@ -2,6 +2,7 @@ package main
 
 import (
    "fmt"
+   "regexp"
    "strings"
    "encoding/json"
 )
@@ -12,11 +13,11 @@ func parseIntent(req GenerateRequest, userInput string, mcpsrv *MCPServer) (map[
    response := ""
    var err error
    if AIs["Ollama"].(*OllamaClient) != nil {
-      jData, err := AIs["Ollama"].(*OllamaClient).Prompt2String(req, "user", prompt)
+      jData, err := AIs["Ollama"].(*OllamaClient).Prompt2String(req, "user", prompt, "")
       if err != nil {
          return nil, fmt.Errorf("prepare prompt for ollama: %s", err.Error())
       }
-      res, err := AIs["Ollama"].(*OllamaClient).Send2LLM(jData)  // (string, error) 
+      res, err := AIs["Ollama"].(*OllamaClient).Send2LLM(jData, false)  // (string, error) 
       if err != nil {
          return nil, fmt.Errorf("query ollama for intent: %s", err.Error())
       }
@@ -25,6 +26,11 @@ func parseIntent(req GenerateRequest, userInput string, mcpsrv *MCPServer) (map[
       fmt.Println("No Ollama client initialized, cannot parse intent")
       return nil, fmt.Errorf("Not any LLM is initialized")
    }
+   // 清除 <think>...</think> 標籤   
+   re := regexp.MustCompile(`(?s)^.*</think>`)
+	response = re.ReplaceAllString(response, "")
+   // 清除 ```
+   response = strings.ReplaceAll(response, "```", "")
    // 清理回應，只保留 JSON 部分
    response = strings.TrimSpace(response)
    start := strings.Index(response, "{")
@@ -34,6 +40,13 @@ func parseIntent(req GenerateRequest, userInput string, mcpsrv *MCPServer) (map[
    }
    var intent map[string]interface{}
    if err = json.Unmarshal([]byte(response), &intent); err != nil { // 如果 JSON 解析失敗，預設為一般對話
+      return map[string]interface{}{
+         "is_related": false,
+         "action":          "general_chat",
+         "parameters":      map[string]interface{}{},
+      }, nil 
+
+      fmt.Println("\nParse intent failed:", err.Error(), "response:", response + "\n")
       return nil, fmt.Errorf("Parse intent failed（Mcpsrv 回傳格式錯誤）: %s", err.Error())      
       /* return map[string]interface{}{
          "is_related": false,
