@@ -1020,13 +1020,13 @@
                             <canvas id="canvas"></canvas>
                             <div id="status" class="status-indicator status-error">
                             <div class="pulse"></div>
-                            <span>攝像頭未啟動</span>
+                            <span>鏡頭未啟動</span>
                         </div>
                     </div>
 
                     <div class="controls">
-                        <button id="start-btn" class="videoBtnX">🎥 啟動攝像頭</button>
-                        <button id="stop-btn" class="videoBtnX videoBtn-stop" disabled>⏹️  停止分析</button>
+                        <button id="start-btn" class="videoBtnX">🎥 啟動</button>
+                        <button id="stop-btn" class="videoBtnX videoBtn-stop" disabled>⏹️  停止</button>
                     </div>
                 </div>
                 </div>
@@ -1219,7 +1219,7 @@ async function captureAndAnalyze() {
                 });
                 const result = await response.text();
                 // addResult(result);
-                // console.log('分析結果:', result);
+                 console.log('分析結果:', result);
             } catch (error) {
                 console.error('分析請求失敗:', error);
                 updateStatus('error', '❌ 網路錯誤，請求失敗');
