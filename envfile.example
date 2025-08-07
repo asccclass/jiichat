@@ -1,21 +1,24 @@
 SystemName=AI工具集
 PORT=80
 ContainerName=ai
-OriginAllowList=https://www.justdrink.com.tw/aiui/
+OriginAllowList=http://localhost/
 AllowMethods=POST;GET;PUT;DELETE
 ResponseType=code
+
+JSONRPCVersion=2.0
 
 DocumentRoot=www/html
 TemplateRoot=www/template/
 UploadFolder=tmp/
-ExtraPath=aiui/
+ExtraPath=
 JobsFile=joblists
 
-MCPSrv=https://www.justdrink.com.tw   # MCP Server URL
-MCPSrvPath=/mcpsrv/ # MCP Server Path
-MCPToken=
+MCPSrv=https://www.justdrink.com.tw
+MCPSrvPath=/mcpsrv/
+MCPToken=justgps@gmail.com
 
-OllamaUrl=http://10.109.1.10:11434
+OllamaUrl=http://172.18.124.210:11434
 Stream=false
 
-GEMINI_API_KEY=
+GEMINI_API_KEY=AIzaSyBSEK6MRf5G-wrAbYNwRbDZUrzQ9gbNxbU
+Debug=true
