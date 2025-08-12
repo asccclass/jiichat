@@ -8,7 +8,6 @@ import (
    "encoding/json"
 )
 
-
 // 輸出 SSEChat 處理的聊天結果
 func Response2User(w http.ResponseWriter, responses []ChatMessage) { 
    flusher, ok := w.(http.Flusher)  // 創建SSE刷新器
@@ -39,7 +38,6 @@ func Response2User(w http.ResponseWriter, responses []ChatMessage) {
    fmt.Fprintf(w, "data: %s\n\n", completeData)
    flusher.Flush()
 }
-
 
 // 寫入響應
 func ResponseChunks(w http.ResponseWriter, response string)/* ([]ChatMessage) */{

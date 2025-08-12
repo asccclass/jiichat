@@ -12,8 +12,7 @@ GOMODULE?=on
 init:
 	GO111MODULE=on go mod download
 
-buildLinux: clean
-	clear
+buildLinux: clean	
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 GO111MODULE=${GOMODULE} go build -tags netgo \
 	-o ${APP}
 
