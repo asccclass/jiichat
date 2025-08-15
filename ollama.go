@@ -156,7 +156,6 @@ func(app *OllamaClient) Send2LLM(jsonData string, isImage bool)(string, error) {
    //if isImage {
      // chatType = "generate"
    //}
-   fmt.Println(chatType, isImage)
    resp, err := http.Post(app.URL+"/api/" + chatType, "application/json", bytes.NewBuffer([]byte(jsonData))) // 發送請求給 Ollama   
    if err != nil {
       return "", fmt.Errorf("發送請求失敗: %s", err.Error())
@@ -170,6 +169,7 @@ func(app *OllamaClient) Send2LLM(jsonData string, isImage bool)(string, error) {
    if err := json.NewDecoder(resp.Body).Decode(&genResp); err != nil {
       return "", fmt.Errorf("解析回應失敗: %v", err)
    }
+   fmt.Println("Ollama 回應:", genResp.Message.Content)
    return genResp.Message.Content, nil
 }
 
@@ -195,11 +195,16 @@ func(app *OllamaClient) Ask(modelName, userinput, base64Image string, files []st
       return "", fmt.Errorf("No data")
    }
    if modelName == "" {
-      modelName = "phi4:latest"  // 預設模型名稱
+      modelName = "gpt-oss:20b"  // 預設模型名稱
    }
    reqBody := GenerateRequest {  // 初始化
       Model:  modelName,
-      Messages: []Message{},   // role, content
+      Messages: []Message{
+         {
+            Role:    "system",
+            Content: "請務必使用繁體中文進行所有回覆，不可使用簡體中文。", // 設定系統指令
+        },
+      },   // role, content
       Stream: false,          // 不使用串流模式
    }
    if base64Image == "" {   // 不是上傳圖檔才需要檢查 MCP 工具

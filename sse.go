@@ -30,7 +30,7 @@ func AIResponse(model, userMessage string)(string) /*([]ChatMessage)*/ {
    return response
 }
 
-// 接收 SSE 請求並處理聊天
+// 接收 SSE 請求並處理聊天  /sse
 func SSEChat(w http.ResponseWriter, r *http.Request) {   
    w.Header().Set("Content-Type", "text/event-stream")
    w.Header().Set("Cache-Control", "no-cache")
@@ -59,7 +59,7 @@ func handleNewChat(w http.ResponseWriter, r *http.Request) {
    </div>`)
 }
 
-// 處理使用者發送消息的 form submit
+// 處理使用者發送消息的 form submit /send-message
 func handleSendMessage(w http.ResponseWriter, r *http.Request) {
    // 解析表單
    if err := r.ParseForm(); err != nil {

@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateAIMessage(currentAiMessage, '⚠️ 連接超時，請檢查網路連接或稍後再試。<br><button onclick="retryLastMessage()" class="retry-btn">重試</button>');
             resetSendButton();
-        }, 30000); // 30秒超時
+        }, 300000); // 30秒超時
         
         try {
             // 連接到SSE端點
