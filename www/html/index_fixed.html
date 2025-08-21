@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     
     // 發送訊息功能
-    window.sendMessage = function() {
+    window.sendMessage = async function() {
         const message = messageInput.value.trim();
         if(!message) return;  // 如果沒有輸入訊息則不處理
         
@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateAIMessage(currentAiMessage, '⚠️ 連接超時，請檢查網路連接或稍後再試。<br><button onclick="retryLastMessage()" class="retry-btn">重試</button>');
             resetSendButton();
-        }, 300000); // 30秒超時
+        }, 300000); // 300秒超時
         
         try {
             // 連接到SSE端點
@@ -589,65 +589,54 @@ document.addEventListener('DOMContentLoaded', function() {
             
             eventSource.onmessage = function(event) {    // 收到訊息
                 console.log('收到SSE消息:', event.data);
-                
                 try {
-                    // 嘗試解析JSON數據
                     let data;
                     try {
-                        data = JSON.parse(event.data);
-                    } catch(parseError) {
-                        // 如果不是JSON，直接當作文本內容處理
+                        data = JSON.parse(event.data);  // 嘗試解析JSON數據
+                    } catch(parseError) {  // 如果不是JSON，直接當作文本內容處理
                         console.log('收到非JSON數據，當作文本處理:', event.data);
                         accumulatedContent += event.data;
                         updateAIMessage(currentAiMessage, accumulatedContent);
-                        return;
+                        // return;
                     }
-                    
                     if(data.type === 'complete') {  // 完成時關閉連接
                         eventSource.close();
                         if(currentAiMessage) {
                             currentAiMessage.dataset.complete = 'true';
-                            // 移除加載指示器類別
-                            currentAiMessage.classList.remove('loading');
+                            currentAiMessage.classList.remove('loading');   // 移除加載指示器類別
                         }
                         resetSendButton();
                         const chatMessages = document.getElementById('chat-container');
                         chatMessages.scrollIntoView({ behavior: 'smooth', block: 'end' }); // 滾動到最新消息  
                     } else if(data.type === 'chunk' || data.type === 'data') {  
-                        // 累積內容
-                        const content = data.content || data.data || '';
+                        const content = data.content || data.data || '';  // 累積內容
                         accumulatedContent += content;
                         updateAIMessage(currentAiMessage, accumulatedContent);
-                    } else if(data.type === 'error') {
-                        // 處理服務器錯誤
+                    } else if(data.type === 'error') {  // 處理服務器錯誤
                         eventSource.close();
                         updateAIMessage(currentAiMessage, `❌ 服務器錯誤: ${data.message || '未知錯誤'}<br><button onclick="retryLastMessage()" class="retry-btn">重試</button>`);
                         resetSendButton();
                     }
                 } catch(e) {
                     console.error('解析SSE數據錯誤:', e, event.data);
-                    // 嘗試直接顯示原始數據
-                    accumulatedContent += event.data;
+                    accumulatedContent += event.data;  // 嘗試直接顯示原始數據
                     updateAIMessage(currentAiMessage, accumulatedContent);
                 }
             };
             
             // 錯誤處理
             eventSource.onerror = function(e) {
-                console.error('SSE連接錯誤:', e);
-                eventSource.close();
-                
-                if(connectionTimeout) {
-                    clearTimeout(connectionTimeout);
-                }
-                
-                // 檢查是否有累積內容
-                if(accumulatedContent.trim()) {
-                    updateAIMessage(currentAiMessage, accumulatedContent);
-                } else {
-                    updateAIMessage(currentAiMessage, '❌ 連接出現問題，請檢查網路連接或稍後再試。<br><button onclick="retryLastMessage()" class="retry-btn">重試</button>');
-                }
-                resetSendButton();
+               console.error('SSE連接錯誤:', e);
+               eventSource.close();
+               if(connectionTimeout) {
+                   clearTimeout(connectionTimeout);
+               }
+               if(accumulatedContent.trim()) {  // 檢查是否有累積內容
+                   updateAIMessage(currentAiMessage, accumulatedContent);
+               } else {
+                   updateAIMessage(currentAiMessage, '❌ 連接出現問題，請檢查網路連接或稍後再試。<br><button onclick="retryLastMessage()" class="retry-btn">重試</button>');
+               }
+               resetSendButton();
             };
             
         } catch(error) {
