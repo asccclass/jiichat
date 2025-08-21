@@ -169,7 +169,6 @@ func(app *OllamaClient) Send2LLM(jsonData string, isImage bool)(string, error) {
    if err := json.NewDecoder(resp.Body).Decode(&genResp); err != nil {
       return "", fmt.Errorf("解析回應失敗: %v", err)
    }
-   fmt.Println("Ollama 回應:", genResp.Message.Content)
    return genResp.Message.Content, nil
 }
 
@@ -210,14 +209,10 @@ func(app *OllamaClient) Ask(modelName, userinput, base64Image string, files []st
    if base64Image == "" {   // 不是上傳圖檔才需要檢查 MCP 工具
       toolsResponse, err := RunTools(reqBody, prompt)  // (map[string]interface, error)    // MCP 工具套用
       if err == nil {  // 如果有工具套用，則使用工具回應
-         // jData, err := app.Prompt2String(reqBody, "user", "把下列內容，用人類的語氣重新改寫，請使用繁體中文回答，並去除掉簡體字：" + toolsResponse)  // 如果沒有工具套用，則使用原始提示
-         // if err != nil {   
-            return toolsResponse, nil
-         // }
          if os.Getenv("Debug") == "true" {
             fmt.Println("Tools response:", toolsResponse)
          }
-         // return app.Send2LLM(string(jData))
+         return toolsResponse, nil
       } 
    }
    jData, err := app.Prompt2String(reqBody, "user", prompt, base64Image)  // 如果沒有工具套用，則使用原始提示

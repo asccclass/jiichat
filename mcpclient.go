@@ -67,7 +67,7 @@ func(c *MCPClient) handleSSEMessages() {
 			
 			// 處理通知消息
 			if msg.Method != "" {
-				fmt.Println(msg)
+				fmt.Println("mcpclient.go", msg)
 				//  c.handleNotification(&msg)
 				select {  // 發送到通知通道
 				case c.notifications <- msg:
@@ -90,7 +90,7 @@ func(c *MCPClient) Connect()(error) {
 	}
 	// 建立 SSE 連接
 	sseURL := fmt.Sprintf("%s%ssse?token=%s", c.serverURL, c.Path, c.token)
-	fmt.Printf("Connecting to MCP server via SSE: %s\n", sseURL)
+	fmt.Printf("mcpclient.go: Connecting to MCP server via SSE: %s\n", sseURL)
 	c.connMu.Lock()
 	if c.isConnected {
 		c.connMu.Unlock()
@@ -121,8 +121,6 @@ func(c *MCPClient) Connect()(error) {
 	c.connMu.Lock()
 	c.isConnected = true
 	c.connMu.Unlock()
-
-	fmt.Printf("Connected to MCP server via SSE: %s", sseURL)
 	go c.handleSSEMessages()  // 啟動 SSE 消息處理協程
 	return nil
 }
@@ -145,7 +143,6 @@ func NewMCPClient()(*MCPClient) {  // 創建 HTTP 客戶端，跳過 TLS 驗證 
 // 尋找工具
 func SearchTool(srv *MCPServer, action string)(*Tool, error) {
 	for _, tool := range srv.Capabilities.Tools {  // 遍歷所有工具
-		fmt.Println("Tool:", tool.Name, action)
 		if tool.Name == action {  // 如果找到匹配的工具
 			return &tool, nil
 		}
@@ -160,128 +157,25 @@ func RunTools(req GenerateRequest, prompt string)(string, error) {
 	}	
 	for _, srv:= range McpHost.ConnectedServers {  // 遍歷所有MCP Server
       if srv.IsRelatedPrompt == "" {
-			continue  // 如果沒有相關提示，則跳過
-		}
+	     continue  // 如果沒有相關提示，則跳過
+	  }
       s, err := parseIntent(req, prompt, srv) // (map[string]interface{}, error)	
       if err != nil {
          continue  // 如果解析不相關，則跳過  fmt.Println("解析意圖不相關:", err.Error())
       }
       action, ok := s["action"].(string)
-      if !ok || action == "general_chat"{
-	      continue  // 如果沒有動作，則跳過
-	   }
-		tool, err := SearchTool(srv, action)  // (string, error)
-		if err != nil {
-			continue  // 如果查找工具失敗，則跳過
-		}
+      if !ok || action == "general_chat" {
+	     continue  // 如果沒有動作，則跳過
+	  }
+	  tool, err := SearchTool(srv, action)  // (string, error)
+	  if err != nil {
+	     continue  // 如果查找工具失敗，則跳過
+	  }
       parameters, ok := s["parameters"].(map[string]interface{})
-	   if !ok {
-		   parameters = make(map[string]interface{})
-	   }
-		return callMCPTool(tool.Name, parameters)  // 調用 MCP 工具
+	  if !ok {
+	     parameters = make(map[string]interface{})
+	  }
+	  return callMCPTool(tool.Name, parameters)  // 調用 MCP 工具
 	}
 	return "", fmt.Errorf("未找到相關的 MCP Server 或工具")
- /*
-	switch action {  // 根據動作調用相應的 MCP 工具
-	case "get_all":
-		res, err := callMCPTool("get_all_todos", make(map[string]interface{}))
-		if err != nil {
-			fmt.Printf("調用 get_all_todos 工具失敗: %s", err.Error())
-		}
-		return res, nil
-	case "get_by_id":
-		if idVal, exists := parameters["id"]; exists {
-			var id int
-			switch v := idVal.(type) {
-			case float64:
-				id = int(v)
-			case int:
-				id = v
-			case string:
-				if parsed, err := strconv.Atoi(v); err == nil {
-					id = parsed
-				} else {
-					return "", fmt.Errorf("無法解析待辦事項 ID")
-				}
-			default:
-				return "", fmt.Errorf("無效的待辦事項 ID 格式")
-			}
-			return callMCPTool("get_todo_by_id", map[string]interface{}{"id": id})
-		}
-		return "", fmt.Errorf("請提供待辦事項的 ID")
-
-	case "create":
-		context, hasContext := parameters["context"].(string)
-		if !hasContext || context == "" {
-			context = prompt  // 嘗試從原始輸入中提取內容
-		}
-		user, _ := parameters["user"].(string)
-		args := map[string]interface{}{
-			"context": context,
-			"user":    user,
-		}
-		// 添加可選參數
-		if dueTime, exists := parameters["duetime"]; exists {
-			args["duetime"] = dueTime
-		}
-		if isFinish, exists := parameters["isFinish"]; exists {
-			args["isFinish"] = isFinish
-		}
-		return callMCPTool("create_todo", args)
-
-	case "update":
-		if idVal, exists := parameters["id"]; exists {
-			var id int
-			switch v := idVal.(type) {
-			case float64:
-				id = int(v)
-			case int:
-				id = v
-			case string:
-				if parsed, err := strconv.Atoi(v); err == nil {
-					id = parsed
-				} else {
-					return "", fmt.Errorf("無法解析待辦事項 ID")
-				}
-			default:
-				return "", fmt.Errorf("無效的待辦事項 ID 格式")
-			}
-			args := map[string]interface{}{"id": fmt.Sprintf("%v", id)}
-	
-			// 添加其他更新參數
-			for key, value := range parameters {
-				if key != "id" {
-					args[key] = value
-				}
-			}
-			return callMCPTool("update_todo", args)
-		}
-		return "", fmt.Errorf("請提供要更新的待辦事項 ID")
-
-	case "delete":
-		if idVal, exists := parameters["id"]; exists {
-			var id int
-			switch v := idVal.(type) {
-			case float64:
-				id = int(v)
-			case int:
-				id = v
-			case string:
-				if parsed, err := strconv.Atoi(v); err == nil {
-					id = parsed
-				} else {
-					return "", fmt.Errorf("無法解析待辦事項 ID")
-				}
-			default:
-				return "", fmt.Errorf("無效的待辦事項 ID 格式")
-			}
-			return callMCPTool("delete_todo", map[string]interface{}{"id": id})
-		}
-		return "", fmt.Errorf("請提供要刪除的待辦事項 ID")
-
-	default:  // 未知動作，使用一般對話		
-		return "", fmt.Errorf("未知的動作類型: %s", action)
-	}
-   return prompt, nil
-	*/
 }

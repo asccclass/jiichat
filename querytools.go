@@ -46,7 +46,6 @@ func parseIntent(req GenerateRequest, userInput string, mcpsrv *MCPServer) (map[
          "parameters":      map[string]interface{}{},
       }, nil 
 
-      fmt.Println("\nParse intent failed:", err.Error(), "response:", response + "\n")
       return nil, fmt.Errorf("Parse intent failed（Mcpsrv 回傳格式錯誤）: %s", err.Error())      
       /* return map[string]interface{}{
          "is_related": false,

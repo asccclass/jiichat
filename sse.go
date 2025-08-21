@@ -21,7 +21,7 @@ func AIResponse(model, userMessage string)(string) /*([]ChatMessage)*/ {
    var err error
    if os.Getenv("OllamaUrl") != "" {   // 根據不同模型準備不同的回應
       ola := AIs["Ollama"].(*OllamaClient)
-      response, err = ola.Ask(model, userMessage, "", nil)
+      response, err = ola.Ask(model, userMessage, "", nil) // response 為純文字或json字串
       if err != nil {
          response = "抱歉！無法處理您的請求。(" + err.Error() + ")"
       }
@@ -31,12 +31,7 @@ func AIResponse(model, userMessage string)(string) /*([]ChatMessage)*/ {
 }
 
 // 接收 SSE 請求並處理聊天  /sse
-func SSEChat(w http.ResponseWriter, r *http.Request) {   
-   w.Header().Set("Content-Type", "text/event-stream")
-   w.Header().Set("Cache-Control", "no-cache")
-   w.Header().Set("Connection", "keep-alive")
-   w.Header().Set("Access-Control-Allow-Origin", "*")
-     
+func SSEChat(w http.ResponseWriter, r *http.Request) { 
    message := r.URL.Query().Get("message")
    model := r.URL.Query().Get("model")
    if message == "" {
@@ -46,7 +41,10 @@ func SSEChat(w http.ResponseWriter, r *http.Request) {
    res :=  AIResponse(model, message)
    if len(res) > 0 {
       ResponseChunks(w, res)
+      fmt.Println("send finish")
       // Response2User(w, res)  // 模擬AI回應模式 
+   } else {
+      ResponseChunks(w, "沒收到資料")
    }
 }
 

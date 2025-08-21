@@ -18,7 +18,8 @@ package main
    
    - 解析LLM選擇的工具名稱，找到對應的Server
    - 向相應的Server發送請求，執行選定的工具
-這個程式展示了MCP Host如何管理多個MCP工具的完整流程，包括初始化連接、能力協商、工具選擇和執行。在實際應用中，HTTP請求和響應處理會更加複雜，但基本流程是相同的。
+這個程式展示了MCP Host如何管理多個MCP工具的完整流程，包括初始化連接、能力協商、工具選擇和執行。
+在實際應用中，HTTP請求和響應處理會更加複雜，但基本流程是相同的。
 */
 
 import (
@@ -30,7 +31,7 @@ import (
    "net/http"
    "encoding/json"
 )
-// LLM客戶端
+// LLM 客戶端
 type LLMClient struct {
 	Name	  string            // 客戶端名稱
 	Endpoint string

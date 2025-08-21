@@ -86,7 +86,7 @@ func callMCPTool(toolName string, args map[string]interface{}) (string, error) {
 	if err := json.Unmarshal(body, &msg); err != nil {
 		return "", fmt.Errorf("unmarshal response: %s", err.Error())
 	}
-	result := msg.Result
+	result := msg.Result  // ex:多雲時晴。降雨機率20%。溫度攝氏27至3...
 	if result.IsError != nil && *result.IsError {
 		return "", fmt.Errorf("tool error: %s", result.Content[0].Text)
 	}
